@@ -18,6 +18,47 @@ def get_gemini_client():
     genai.configure(api_key=API_KEY)
     return genai.GenerativeModel("gemini-flash-latest")
 
+def define_clusters_with_llm_groq(api_key, questions_sample):
+    print(f"Defining clusters dynamically via Groq...")
+    questions_input = [{"comment_id": q["comment_id"], "text": q["text"]} for q in questions_sample]
+    
+    prompt = f"""You are a data scientist analyzing student comments.
+Review this sample of {len(questions_input)} student questions and identify 6 to 8 distinct topic clusters (categories) they fall into.
+For each cluster, provide a 1-based integer cluster_id, a concise title, and a brief description of what kinds of questions belong in it.
+
+Questions sample:
+{json.dumps(questions_input, indent=2)}
+
+Format your output exactly as a JSON object with a single root key "clusters" containing a list of objects.
+Each object must have:
+- "cluster_id" (integer)
+- "title" (string)
+- "description" (string)
+"""
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "llama-3.1-8b-instant",
+        "messages": [
+            {"role": "system", "content": "You are a research assistant. Always respond in JSON format conforming to the requested schema."},
+            {"role": "user", "content": prompt}
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.2
+    }
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        response.raise_for_status()
+        res_data = response.json()
+        content = res_data["choices"][0]["message"]["content"]
+        return json.loads(content).get("clusters", [])
+    except Exception as e:
+        print(f"Error defining clusters via Groq: {e}")
+        return None
+
 def define_clusters_with_llm(model, questions_sample):
     print(f"Defining clusters dynamically based on a sample of {len(questions_sample)} questions...")
     questions_input = [{"comment_id": q["comment_id"], "text": q["text"]} for q in questions_sample]
@@ -59,6 +100,9 @@ Questions sample:
         )
         return json.loads(response.text)["clusters"]
     except Exception as e:
+        if GROQ_API_KEY:
+            print(f"Gemini failed to define clusters: {e}. Falling back to Groq...")
+            return define_clusters_with_llm_groq(GROQ_API_KEY, questions_sample)
         print(f"Error defining clusters: {e}")
         return None
 

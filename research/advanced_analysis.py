@@ -142,8 +142,8 @@ Each object must have:
         "temperature": 0.1
     }
     
-    max_retries = 3
-    backoff_time = 4.0
+    max_retries = 8
+    backoff_time = 10.0
     
     for attempt in range(max_retries):
         try:
@@ -280,7 +280,7 @@ def main():
     questions_list = questions_df.to_dict(orient="records")
     
     # 2. Step 1: Define clusters dynamically from sample
-    sample_size = min(80, len(questions_list))
+    sample_size = min(40, len(questions_list))
     sample_questions = questions_df.sample(n=sample_size, random_state=42).to_dict(orient="records")
     clusters = define_clusters_with_llm(model, sample_questions)
     
@@ -308,7 +308,7 @@ def main():
         
         annotations = annotate_questions_batch(model, clusters, batch)
         all_annotations.extend(annotations)
-        time.sleep(4.5)  # Stay below RPM limit
+        time.sleep(12.0)  # Stay below RPM/TPM limits
         
     # Map back to our dataset structure
     annotations_map = {a["comment_id"]: a for a in all_annotations}

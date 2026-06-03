@@ -2,6 +2,7 @@ import os
 import json
 import time
 import pandas as pd
+import requests
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -9,6 +10,7 @@ import google.generativeai as genai
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../.env"))
 
 API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 def get_gemini_client():
     if not API_KEY:
@@ -59,6 +61,70 @@ Questions sample:
     except Exception as e:
         print(f"Error defining clusters: {e}")
         return None
+
+def annotate_questions_batch_groq(api_key, clusters, questions_batch):
+    questions_input = [{"comment_id": q["comment_id"], "text": q["text"]} for q in questions_batch]
+    
+    prompt = f"""You are a senior data scientist profiling student questions from Aleks Gornik's channel.
+Assign each of the questions to one of the predefined clusters and extract key entities.
+
+Predefined Clusters:
+{json.dumps(clusters, indent=2)}
+
+Questions to annotate:
+{json.dumps(questions_input, indent=2)}
+
+Format your output exactly as a JSON object with a single root key "annotations" containing a list of objects.
+Each object must have:
+- "comment_id" (string)
+- "cluster_id" (integer)
+- "subject" (string)
+- "tool" (string)
+- "student_stage" (string, must be one of "prospective", "active", "job-seeker")
+- "urgency" (string, must be one of "high", "medium", "low")
+"""
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "llama-3.1-8b-instant",
+        "messages": [
+            {"role": "system", "content": "You are a research assistant. Always respond in JSON format conforming to the requested schema."},
+            {"role": "user", "content": prompt}
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.1
+    }
+    
+    max_retries = 3
+    backoff_time = 4.0
+    
+    for attempt in range(max_retries):
+        try:
+            print(f"  Calling Groq API (attempt {attempt + 1}/{max_retries})...", flush=True)
+            start_time = time.time()
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            if response.status_code == 429:
+                print(f"  Groq Rate limited (429). Retrying in {backoff_time}s...", flush=True)
+                time.sleep(backoff_time)
+                backoff_time *= 2.0
+                continue
+            response.raise_for_status()
+            res_data = response.json()
+            content = res_data["choices"][0]["message"]["content"]
+            print(f"  Groq API responded in {time.time() - start_time:.2f}s", flush=True)
+            return json.loads(content).get("annotations", [])
+        except Exception as e:
+            if attempt == max_retries - 1:
+                print(f"Error calling Groq API for batch (final attempt): {e}", flush=True)
+                return []
+            print(f"Error calling Groq: {e}. Retrying in {backoff_time}s...", flush=True)
+            time.sleep(backoff_time)
+            backoff_time *= 2.0
+            
+    return []
 
 def annotate_questions_batch(model, clusters, questions_batch):
     questions_input = [{"comment_id": q["comment_id"], "text": q["text"]} for q in questions_batch]
@@ -112,14 +178,21 @@ Questions to annotate:
             print(f"  Gemini API responded in {time.time() - start_time:.2f}s", flush=True)
             return json.loads(response.text)["annotations"]
         except Exception as e:
+            if ("429" in str(e) or "ResourceExhausted" in str(e) or "quota" in str(e).lower()) and GROQ_API_KEY:
+                print(f"  Gemini rate limit / quota exceeded. Falling back to Groq for this batch...", flush=True)
+                return annotate_questions_batch_groq(GROQ_API_KEY, clusters, questions_batch)
+                
             if attempt == max_retries - 1:
-                print(f"Error calling Gemini API for batch (final attempt): {e}")
+                if GROQ_API_KEY:
+                    print(f"  Gemini API failed on final attempt: {e}. Falling back to Groq...", flush=True)
+                    return annotate_questions_batch_groq(GROQ_API_KEY, clusters, questions_batch)
+                print(f"Error calling Gemini API for batch (final attempt): {e}", flush=True)
                 return []
             
             if "429" in str(e) or "ResourceExhausted" in str(e):
-                print(f"Rate limited (429). Retrying in {backoff_time}s...")
+                print(f"Rate limited (429). Retrying in {backoff_time}s...", flush=True)
             else:
-                print(f"Error: {e}. Retrying in {backoff_time}s...")
+                print(f"Error: {e}. Retrying in {backoff_time}s...", flush=True)
             time.sleep(backoff_time)
             backoff_time *= 2.0
             

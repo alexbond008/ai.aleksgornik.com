@@ -6,13 +6,16 @@ Endpoints:
   GET  /auth/me         — validate token, return user info + remaining messages
   POST /chat            — streaming RAG chat (requires valid JWT)
   GET  /health          — liveness check
+
+LLM: Groq (llama-3.3-70b-versatile) for local dev / free tier.
+     Swap GROQ_API_KEY → ANTHROPIC_API_KEY and update get_llm_client() for production.
 """
 
 import os
 import uuid
 from typing import AsyncGenerator, List, Optional
 
-import anthropic
+from groq import AsyncGroq
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,14 +45,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_anthropic_client: Optional[anthropic.AsyncAnthropic] = None
+_groq_client: Optional[AsyncGroq] = None
 
 
-def get_anthropic_client() -> anthropic.AsyncAnthropic:
-    global _anthropic_client
-    if _anthropic_client is None:
-        _anthropic_client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-    return _anthropic_client
+def get_groq_client() -> AsyncGroq:
+    global _groq_client
+    if _groq_client is None:
+        _groq_client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+    return _groq_client
 
 
 # ---------------------------------------------------------------------------
@@ -116,8 +119,6 @@ def health():
 async def register(body: RegisterRequest):
     kit_ok = await subscribe_to_kit(body.name, body.email)
     if not kit_ok:
-        # Log failure but don't block access — Kit is best-effort for lead capture.
-        # A hard failure here would break the entire onboarding flow.
         import logging
         logging.warning("Kit subscription failed for %s — granting access anyway", body.email)
 
@@ -155,38 +156,40 @@ async def chat(body: ChatRequest, user: dict = Depends(get_current_user)):
     # Retrieve context and build augmented prompt
     chunks = retrieve_context(last_user_msg)
 
-    # Build messages for Claude — replace the last user message with RAG-augmented version
-    claude_messages = []
+    # Build message list for Groq (same OpenAI-compatible format)
+    groq_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for i, msg in enumerate(body.messages):
         is_last_user = (
             msg.role == "user"
             and i == max(j for j, m in enumerate(body.messages) if m.role == "user")
         )
         if is_last_user:
-            claude_messages.append({
-                "role": "user",
-                "content": build_rag_prompt(msg.content, chunks),
-            })
+            groq_messages.append({"role": "user", "content": build_rag_prompt(msg.content, chunks)})
         else:
-            claude_messages.append({"role": msg.role, "content": msg.content})
+            groq_messages.append({"role": msg.role, "content": msg.content})
 
-    client = get_anthropic_client()
+    client = get_groq_client()
 
     async def stream_response() -> AsyncGenerator[str, None]:
-        yield f"data: {remaining}\n\n"  # send remaining count as first SSE event
+        yield f"data: {remaining}\n\n"
 
-        async with client.messages.stream(
-            model="claude-opus-4-8",
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            messages=claude_messages,
-            thinking={"type": "adaptive"},
-        ) as stream:
-            async for text in stream.text_stream:
+        try:
+            stream = await client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=groq_messages,
+                stream=True,
+                max_tokens=1024,
+                temperature=0.7,
+            )
+            async for chunk in stream:
+                text = chunk.choices[0].delta.content or ""
                 if text:
-                    # SSE format: data: <chunk>\n\n
                     escaped = text.replace("\n", "\\n")
                     yield f"data: {escaped}\n\n"
+        except Exception as e:
+            import logging
+            logging.error("Groq streaming error: %s", e)
+            yield "data: Sorry, I ran into an error. Please try again.\\n\n\n"
 
         yield "data: [DONE]\n\n"
 

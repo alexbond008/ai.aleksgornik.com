@@ -28,9 +28,15 @@ from backend.rate_limit import check_and_increment, get_remaining
 
 app = FastAPI(title="AI Aleks", version="1.0.0")
 
+_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://ai.aleksgornik.com",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten in production
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

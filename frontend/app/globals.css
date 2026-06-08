@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+:root {
+  --bg:        #060608;
+  --surface:   #0e0e12;
+  --surface-1: #131318;
+  --surface-2: #1a1a22;
+  --surface-3: #22222e;
+  --fg:        #F0EBE0;
+  --fg-muted:  #6b6b7a;
+  --fg-subtle: #3a3a48;
+  --gold:      #C9A84C;
+  --gold-dim:  #8a6e2a;
+  --border:    #1e1e28;
+  --border-hi: #2a2a38;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-gold: var(--gold);
+  --color-border: var(--border);
+  --color-border-hi: var(--border-hi);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* ── Gradient text ── */
+.gradient-text {
+  background: linear-gradient(135deg, #ffffff 0%, #F0EBE0 55%, #C9A84C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gold-text {
+  background: linear-gradient(135deg, #e8c96a 0%, #C9A84C 60%, #a07830 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Glass surfaces ── */
+.glass {
+  background: rgba(13, 13, 17, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.055);
+}
+
+.glass-gold {
+  background: rgba(10, 10, 14, 0.78);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(201, 168, 76, 0.14);
+  box-shadow:
+    0 0 80px -30px rgba(201, 168, 76, 0.10),
+    inset 0 1px 0 rgba(201,168,76,0.06);
+}
+
+/* ── Divider ── */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-hi), transparent);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+/* ── Shimmer on CTA button ── */
+@keyframes shimmer {
+  from { transform: translateX(-120%); }
+  to   { transform: translateX(220%); }
+}
+.shimmer-btn { position: relative; overflow: hidden; }
+.shimmer-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.20) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: shimmer 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Orb ambient pulse ── */
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
+  50%       { transform: translateY(-18px) scale(1.05); opacity: 1; }
+}
+
+/* ── Chat message entrance ── */
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-in { animation: msg-in 0.3s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+/* ── Cursor blink ── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.cursor-blink { animation: blink 0.9s step-end infinite; }
+
+/* ── Input gold focus ── */
+.input-gold:focus {
+  outline: none;
+  border-color: rgba(201, 168, 76, 0.45) !important;
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.07);
+}
+
+/* ── Noise texture overlay (subtle premium feel) ── */
+.noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 0;
+}

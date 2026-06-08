@@ -25,12 +25,12 @@ Status legend: ✅ Done | 🔄 In Progress | ⬜ Not started
 
 ---
 
-## Phase 3: Frontend ⬜
+## Phase 3: Frontend ✅
 
-- ⬜ Landing page — hero, value prop, name+email form
-- ⬜ Email gate flow — form submit → Kit API → unlock chat
-- ⬜ Chat UI — streaming message display, Aleks branding
-- ⬜ Rate limit UI — show remaining messages, upgrade CTA
+- ✅ Landing page — cinematic hero, typewriter demo, ambient orb glows, grid bg
+- ✅ Email gate flow — glassmorphic form → `/auth/register` → unlock chat
+- ✅ Chat UI — streaming SSE display, typing dots, starter questions, auto-resize input
+- ✅ Rate limit UI — live "X left today" badge in chat header, turns red at ≤2
 
 ---
 

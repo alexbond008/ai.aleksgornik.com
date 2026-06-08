@@ -13,15 +13,15 @@ Status legend: ✅ Done | 🔄 In Progress | ⬜ Not started
 
 ---
 
-## Phase 2: Backend API ⬜
+## Phase 2: Backend API ✅
 
-- ⬜ Set up FastAPI project structure (`backend/`)
-- ⬜ RAG query endpoint — embed query → Pinecone top-k → LLM with context → streaming response
-- ⬜ Choose and integrate LLM (Claude via Anthropic API recommended)
-- ⬜ Kit.com email-gate endpoint — POST name+email → subscribe to Kit form → return session token
-- ⬜ Rate limiting — cap free users to N messages per day/session
-- ⬜ Persona system prompt — craft "sounds like Aleks" prompt from transcript analysis
-- ⬜ Weekly auto-ingestion script (`scripts/ingest_new.py`) — fetch only new videos since last run
+- ✅ Set up FastAPI project structure (`backend/`)
+- ✅ RAG query endpoint — embed query → Pinecone top-k → LLM with context → streaming response
+- ✅ Choose and integrate LLM (Claude claude-opus-4-8 with adaptive thinking, streaming SSE)
+- ✅ Kit.com email-gate endpoint — POST name+email → subscribe to Kit form → return session token
+- ✅ Rate limiting — 10 messages/day per user, in-memory (swap for Redis in production)
+- ✅ Persona system prompt — crafted "sounds like Aleks" prompt in `backend/persona.py`
+- ✅ Weekly auto-ingestion script (`scripts/ingest_new.py`) — fetch only new videos since last run
 
 ---
 

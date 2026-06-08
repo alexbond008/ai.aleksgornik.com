@@ -91,6 +91,7 @@ def build_chunks(transcripts: list) -> list:
                     "published_at": t.get("published_at", "unknown"),
                     "chunk_index": i,
                     "total_chunks": len(chunks),
+                    "text": text,  # stored so RAG can retrieve it directly
                 },
             })
     return all_chunks

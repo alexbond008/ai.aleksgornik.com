@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://aialeksgornikcom-production.up.railway.app";
 
 export async function register(name: string, email: string) {
   const res = await fetch(`${API_BASE}/auth/register`, {

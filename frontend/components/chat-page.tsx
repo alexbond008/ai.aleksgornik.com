@@ -9,10 +9,10 @@ interface Props {
 }
 
 const STARTERS = [
-  "How do I break into data science with no CS degree?",
-  "What's the most important thing for landing a data internship?",
-  "Is a master's degree in data science worth the cost?",
-  "How did you transition from EE to software engineering?",
+  "Should I do EE or CS — what's the actual difference?",
+  "How do I land my first engineering internship with no experience?",
+  "I'm struggling with maths in first year. Am I cooked?",
+  "What would you do differently if you started your degree again?",
 ];
 
 function TypingDots() {
@@ -253,7 +253,7 @@ export function ChatPage({ token, userName }: Props) {
                   Hey{userName ? `, ${userName.split(" ")[0]}` : ""}! I&apos;m AI Aleks.
                 </h2>
                 <p className="text-sm max-w-sm" style={{ color: "var(--fg-muted)" }}>
-                  Ask me anything Aleks has ever talked about — career paths, internships, data science, or
+                  Ask me anything Aleks has covered — engineering degrees, internships, career strategy, or
                   what he&apos;d actually do differently.
                 </p>
               </div>

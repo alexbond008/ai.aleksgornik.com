@@ -20,7 +20,7 @@ def get_gemini_client():
 
 def define_clusters_with_llm_groq(api_key, questions_sample):
     print(f"Defining clusters dynamically via Groq...")
-    questions_input = [{"comment_id": q["comment_id"], "text": q["text"]} for q in questions_sample]
+    questions_input = [{"comment_id": q["comment_id"], "text": q["text"][:800]} for q in questions_sample]
     
     prompt = f"""You are a data scientist analyzing student comments.
 Review this sample of {len(questions_input)} student questions and identify 6 to 8 distinct topic clusters (categories) they fall into.
@@ -61,7 +61,7 @@ Each object must have:
 
 def define_clusters_with_llm(model, questions_sample):
     print(f"Defining clusters dynamically based on a sample of {len(questions_sample)} questions...")
-    questions_input = [{"comment_id": q["comment_id"], "text": q["text"]} for q in questions_sample]
+    questions_input = [{"comment_id": q["comment_id"], "text": q["text"][:800]} for q in questions_sample]
     
     prompt = f"""You are a data scientist analyzing student comments.
 Review this sample of {len(questions_input)} student questions and identify 6 to 8 distinct topic clusters (categories) they fall into.
@@ -107,7 +107,7 @@ Questions sample:
         return None
 
 def annotate_questions_batch_groq(api_key, clusters, questions_batch):
-    questions_input = [{"comment_id": q["comment_id"], "text": q["text"]} for q in questions_batch]
+    questions_input = [{"comment_id": q["comment_id"], "text": q["text"][:800]} for q in questions_batch]
     
     prompt = f"""You are a senior data scientist profiling student questions from Aleks Gornik's channel.
 Assign each of the questions to one of the predefined clusters and extract key entities.
@@ -171,7 +171,7 @@ Each object must have:
     return []
 
 def annotate_questions_batch(model, clusters, questions_batch):
-    questions_input = [{"comment_id": q["comment_id"], "text": q["text"]} for q in questions_batch]
+    questions_input = [{"comment_id": q["comment_id"], "text": q["text"][:800]} for q in questions_batch]
     
     prompt = f"""You are a senior data scientist profiling student questions from Aleks Gornik's channel.
 Assign each of the questions to one of the predefined clusters and extract key entities.
